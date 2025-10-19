@@ -26,12 +26,10 @@
 	local util		= require "luci.util"
 	local fs		= require "nixio.fs"
 	local nutil		= require "nixio.util"
-	local json		= require "luci.jsonc"
 	local sys		= require "luci.sys"
 	local uci		= require 'luci.model.uci'.cursor()
 
 	-- Fetch Local Background Media
-
 	local function glob(...)
 		local iter, code, msg = fs.glob(...)
 		if iter then
@@ -41,24 +39,20 @@
 		end
 	end
 
-
 	local imageTypes = " jpg png gif webp "
 	local videoTypes = " mp4 webm "
 	local allTypes = imageTypes .. videoTypes
+
 	local function fetchMedia(path, themeDir)
 		local backgroundTable = {}
 		local backgroundCount = 0
 		for i, f in ipairs(glob(path)) do
-			attr = fs.stat(f)
+			local attr = fs.stat(f)
 			if attr then
 				local ext = fs.basename(f):match(".+%.(%w+)$")
-				if ext ~= nil then
-					ext = ext:lower()
-				end
+				if ext ~= nil then ext = ext:lower() end
 				if ext ~= nil and string.match(allTypes, " "..ext.." ") ~= nil then
-					local bg = {}
-					bg.type = ext
-					bg.url = themeDir .. fs.basename(f)
+					local bg = { type = ext, url = themeDir .. fs.basename(f) }
 					table.insert(backgroundTable, bg)
 					backgroundCount = backgroundCount + 1
 				end
@@ -66,42 +60,45 @@
 		end
 		return backgroundTable, backgroundCount
 	end
+
 	local function selectBackground(themeDir)
-		local bgUrl			= media .. "/img/bg1.jpg"
-		local backgroundType	= "Image"
-		local mimeType			= ""
+		local bgUrl = media .. "/img/bg1.jpg"
+		local backgroundType = "Image"
+		local mimeType = ""
 
 		if fs.access("/etc/config/edge2") then
 			local online_wallpaper = uci:get_first('edge2', 'global', 'online_wallpaper') or (uci:get_first('edge2', 'global', 'bing_background') == '1' and 'bing')
-			if (online_wallpaper and online_wallpaper ~= "none") then
+			if online_wallpaper and online_wallpaper ~= "none" then
 				local picurl = sys.exec("/usr/libexec/edge2/online_wallpaper")
-				if (picurl and picurl ~= '') then
+				if picurl and picurl ~= '' then
 					return picurl, "Image", ""
 				end
 			end
 		end
 
 		local backgroundTable, backgroundCount = fetchMedia("/www" .. themeDir .. "*", themeDir)
-		if ( backgroundCount > 0 ) then
+		if backgroundCount > 0 then
 			local currentBg = backgroundTable[math.random(1, backgroundCount)]
-			bgUrl			= currentBg.url
-			if (string.match(videoTypes, " "..currentBg.type.." ") ~= nil) then
-				backgroundType	= "Video"
-				mimeType		= "video/" .. currentBg.type
+			bgUrl = currentBg.url
+			if string.match(videoTypes, " "..currentBg.type.." ") ~= nil then
+				backgroundType = "Video"
+				mimeType = "video/" .. currentBg.type
 			end
 		end
 
 		return bgUrl, backgroundType, mimeType
 	end
 
-	local boardinfo			= util.ubus("system", "board")
-	local themeDir			= media .. "/background/"
+	local boardinfo = util.ubus("system", "board")
+	local themeDir = media .. "/background/"
 	local bgUrl, backgroundType, mimeType = selectBackground(themeDir)
 %>
+
 <!-- Tailwind CSS -->
 <script src="https://cdn.tailwindcss.com"></script>
 <!-- Font Awesome -->
 <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
 <script>
 	tailwind.config = {
 		theme: {
@@ -120,19 +117,14 @@
 					'slide-up': 'slideUp 0.5s ease-out',
 				},
 				keyframes: {
-					fadeIn: {
-						'0%': { opacity: '0' },
-						'100%': { opacity: '1' },
-					},
-					slideUp: {
-						'0%': { transform: 'translateY(20px)', opacity: '0' },
-						'100%': { transform: 'translateY(0)', opacity: '1' },
-					},
+					fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+					slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
 				},
 			}
 		}
 	}
 </script>
+
 <style type="text/tailwindcss">
 	@layer utilities {
 		.bg-gradient-mi {
@@ -147,22 +139,30 @@
 		.card-login {
 			@apply bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-8 w-full max-w-md animate-fade-in;
 		}
-	}
-</style>
+	</style>
+
 <!-- Login Page Start -->
-<div class="min-h-screen flex items-center justify-center p-4 bg-cover bg-center" style="background-image: url('<%=media%>/img/bg1.jpg');">
-	<!-- Login Container Start -->
-	<div class="w-full max-w-md animate-fade-in">
+<div class="login-page min-h-screen flex flex-col justify-center items-center bg-cover bg-center" style="background-image: url('<%=bgUrl%>');">
+
+	<!-- Optional video background -->
+	<% if backgroundType == "Video" then %>
+	<video autoplay muted loop class="absolute inset-0 w-full h-full object-cover -z-10">
+		<source src="<%=bgUrl%>" type="<%=mimeType%>">
+	</video>
+	<% end %>
+
+	<!-- Login Container -->
+	<div class="w-full max-w-md animate-fade-in z-10">
 		<div class="card-login animate-slide-up">
-			<!-- Logo Start -->
+			<!-- Logo -->
 			<div class="flex justify-center mb-8">
 				<div class="text-center">
 					<div class="text-5xl font-bold text-miBlue mb-2">XiaoYu</div>
 					<div class="text-gray-600 text-lg">欢迎使用小渔路由系统</div>
 				</div>
 			</div>
-			<!-- Logo End -->
-			<!-- Login Form Start -->
+
+			<!-- Login Form -->
 			<form class="form-login" method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
 				<%- if fuser then %>
 				<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 animate-fade-in">
@@ -175,8 +175,9 @@
 					<div class="relative">
 						<input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:input-focus transition-all duration-300" 
 							id="cbi-input-user" type="text" name="luci_username" value="<%=duser%>" placeholder="请输入管理员账号" />
-						<i class="fa fa-user absolute absolute absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+						<i class="fa fa-user absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
 					</div>
+
 					<div class="relative">
 						<input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:input-focus transition-all duration-300" 
 							id="cbi-input-password" type="password" name="luci_password" placeholder="请输入管理员密码" />
@@ -185,6 +186,7 @@
 							<i class="fa fa-eye-slash"></i>
 						</button>
 					</div>
+
 					<div class="flex items-center justify-between">
 						<div class="flex items-center">
 							<input type="checkbox" id="remember" name="remember" class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded">
@@ -192,6 +194,7 @@
 						</div>
 						<a href="#" class="text-sm text-primary hover:text-primary/80 transition-colors">忘记密码?</a>
 					</div>
+
 					<div>
 						<button type="submit" class="btn-mi w-full flex items-center justify-center">
 							<span>登录</span>
@@ -200,70 +203,67 @@
 					</div>
 				</div>
 			</form>
-			<!-- Login Form End -->
-			<!-- Footer Start -->
-			<div class="mt-8 text-center text-sm text-gray-500">
-				<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
-				<div class="mt-1">版本 <%=boardinfo.release or "?"%></div>
-			</div>
-			<!-- Footer End -->
 		</div>
 	</div>
-	<!-- Login Container End -->
+
+	<!-- Footer -->
+	<div class="mt-8 text-center text-sm text-gray-500 z-10">
+		<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
+		<div class="mt-1">版本 <%=boardinfo.release or "?"%></div>
+	</div>
+
 </div>
 <!-- Login Page End -->
-<script type="text/javascript">//<![CDATA[
-	// Toggle password visibility
-	const togglePasswordBtn = document.getElementById('toggle-password');
-	const passwordInput = document.getElementById('cbi-input-password');
-	
-	if (togglePasswordBtn && passwordInput) {
-		togglePasswordBtn.addEventListener('click', function() {
-			const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-			passwordInput.setAttribute('type', type);
-			
-			// Toggle icon
-			const icon = this.querySelector('i');
-			if (type === 'password') {
-				icon.classList.remove('fa-eye');
-				icon.classList.add('fa-eye-slash');
-			} else {
-				icon.classList.remove('fa-eye-slash');
-				icon.classList.add('fa-eye');
-			}
-		});
-	}
 
-	// Focus on password field by default
-	var input = document.getElementsByName('luci_password')[0];
-	if (input)
-		input.focus();
+<script type="text/javascript">
+// Toggle password visibility
+const togglePasswordBtn = document.getElementById('toggle-password');
+const passwordInput = document.getElementById('cbi-input-password');
 
-	// Add input animations
-	const inputs = document.querySelectorAll('input');
-	inputs.forEach(input => {
-		input.addEventListener('focus', function() {
-			this.parentElement.classList.add('scale-[1.02]');
-			this.parentElement.style.transition = 'transform 0.3s ease';
-		});
-		
-		input.addEventListener('blur', function() {
-			this.parentElement.classList.remove('scale-[1.02]');
-		});
+if (togglePasswordBtn && passwordInput) {
+	togglePasswordBtn.addEventListener('click', function() {
+		const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+		passwordInput.setAttribute('type', type);
+
+		const icon = this.querySelector('i');
+		if (type === 'password') {
+			icon.classList.remove('fa-eye');
+			icon.classList.add('fa-eye-slash');
+		} else {
+			icon.classList.remove('fa-eye-slash');
+			icon.classList.add('fa-eye');
+		}
 	});
+}
 
-	// Form validation
-	const form = document.querySelector('.form-login');
-	if (form) {
-		form.addEventListener('submit', function(e) {
-			const username = document.getElementById('cbi-input-user').value;
-			const password = document.getElementById('cbi-input-password').value;
-			
-			if (!username || !password) {
-				e.preventDefault();
-				alert('请输入用户名和密码');
-			}
-		});
-	}
-//]]></script>
+// Focus on password field by default
+var input = document.getElementsByName('luci_password')[0];
+if (input) input.focus();
+
+// Input animations
+const inputs = document.querySelectorAll('input');
+inputs.forEach(input => {
+	input.addEventListener('focus', function() {
+		this.parentElement.classList.add('scale-[1.02]');
+		this.parentElement.style.transition = 'transform 0.3s ease';
+	});
+	input.addEventListener('blur', function() {
+		this.parentElement.classList.remove('scale-[1.02]');
+	});
+});
+
+// Form validation
+const form = document.querySelector('.form-login');
+if (form) {
+	form.addEventListener('submit', function(e) {
+		const username = document.getElementById('cbi-input-user').value;
+		const password = document.getElementById('cbi-input-password').value;
+		if (!username || !password) {
+			e.preventDefault();
+			alert('请输入用户名和密码');
+		}
+	});
+}
+</script>
+
 <%+themes/edge2/footer_login%>
