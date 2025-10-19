@@ -2,7 +2,7 @@
 	Edge2 is a clean HTML5 theme for LuCI. It is based on luci-theme-bootstrap and MUI and Edge2 Template
 
 	luci-theme-edge2
-	Copyright 2020 Jerryk <jerrykuku@gmail.com>
+	Copyright 2020 Jerrykuku <jerrykuku@gmail.com>
 
 	Have a bug? Please create an issue here on GitHub!
 	https://github.com/jerrykuku/luci-theme-edge2/issues
@@ -29,6 +29,7 @@
 	local json		= require "luci.jsonc"
 	local sys		= require "luci.sys"
 	local uci		= require 'luci.model.uci'.cursor()
+	local ver		= require "luci.version"  -- 引入版本信息（原footer_login.htm中的依赖）
 
 	-- Fetch Local Background Media
 	local function glob(...)
@@ -146,16 +147,18 @@
 		.card-login {
 			@apply bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-8 w-full max-w-md animate-fade-in;
 		}
-		.footer-login {
-			@apply mt-8 text-center text-sm text-gray-500 animate-fade-in;
+		.footer-main {
+			@apply mt-8 text-center text-sm text-gray-500;
+		}
+		.footer-links {
+			@apply mt-4 text-xs text-gray-400;
 		}
 	}
 </style>
-<!-- Login Page Start: 统一背景容器，包裹登录框和Footer -->
-<div class="login-page min-h-screen bg-cover bg-center flex flex-col justify-center items-center p-4" style="background-image: url('<%=bgUrl%>');">
+<!-- Login Page Start -->
+<div class="min-h-screen flex flex-col justify-center items-center p-4 bg-cover bg-center" style="background-image: url('<%=bgUrl%>');">
 	<!-- Login Container Start -->
-	<div class="w-full max-w-md">
-		<!-- Login Card -->
+	<div class="w-full max-w-md animate-fade-in">
 		<div class="card-login animate-slide-up">
 			<!-- Logo Start -->
 			<div class="flex justify-center mb-8">
@@ -165,7 +168,6 @@
 				</div>
 			</div>
 			<!-- Logo End -->
-
 			<!-- Login Form Start -->
 			<form class="form-login" method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
 				<%- if fuser then %>
@@ -205,18 +207,22 @@
 				</div>
 			</form>
 			<!-- Login Form End -->
+			<!-- 合并原footer_login.htm的页脚信息 -->
+			<div class="footer-main">
+				<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
+				<div class="mt-1">版本 <%=boardinfo.release or "?"%></div>
+				<!-- 原footer_login.htm中的链接信息 -->
+				<div class="footer-links">
+					<a href="https://yuos.top" target="_blank">小渔学长</a> /
+					<a class="luci-link" href="https://github.com/openwrt/luci" target="_blank">Powered by <%= ver.luciname %></a> /
+					<a href="https://github.com/yuos-bit/luci-theme-edge/tree/debug" target="_blank">EdgeTheme</a>
+				</div>
+			</div>
 		</div>
 	</div>
 	<!-- Login Container End -->
-
-	<!-- Footer: 与登录框同级，放在背景容器内 -->
-	<div class="footer-login">
-		<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
-		<div class="mt-1">版本 <%=boardinfo.release or "?"%></div>
-	</div>
 </div>
 <!-- Login Page End -->
-
 <script type="text/javascript">//<![CDATA[
 	// Toggle password visibility
 	const togglePasswordBtn = document.getElementById('toggle-password');
@@ -226,16 +232,23 @@
 		togglePasswordBtn.addEventListener('click', function() {
 			const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
 			passwordInput.setAttribute('type', type);
+			
 			// Toggle icon
 			const icon = this.querySelector('i');
-			icon.classList.toggle('fa-eye');
-			icon.classList.toggle('fa-eye-slash');
+			if (type === 'password') {
+				icon.classList.remove('fa-eye');
+				icon.classList.add('fa-eye-slash');
+			} else {
+				icon.classList.remove('fa-eye-slash');
+				icon.classList.add('fa-eye');
+			}
 		});
 	}
 
 	// Focus on password field by default
 	var input = document.getElementsByName('luci_password')[0];
-	if (input) input.focus();
+	if (input)
+		input.focus();
 
 	// Add input animations
 	const inputs = document.querySelectorAll('input');
@@ -244,6 +257,7 @@
 			this.parentElement.classList.add('scale-[1.02]');
 			this.parentElement.style.transition = 'transform 0.3s ease';
 		});
+		
 		input.addEventListener('blur', function() {
 			this.parentElement.classList.remove('scale-[1.02]');
 		});
@@ -255,11 +269,25 @@
 		form.addEventListener('submit', function(e) {
 			const username = document.getElementById('cbi-input-user').value;
 			const password = document.getElementById('cbi-input-password').value;
+			
 			if (!username || !password) {
 				e.preventDefault();
 				alert('请输入用户名和密码');
 			}
 		});
 	}
+
+	// 原footer_login.htm中的脚本逻辑
+	var luciLocation = <%= luci.http.write_json(luci.dispatcher.context.path) %>;
+	var winHeight = $(window).height();
+	$(window).resize(function () {
+		var winWidth = $(window).width()
+		if(winWidth < 600){
+			var newHeight = $(this).height();
+			var keyboradHeight = newHeight - winHeight;
+			$(".ftc").css("bottom", keyboradHeight + 30);
+		}
+	})
 //]]></script>
-<%+themes/edge2/footer_login%>
+</body>  <!-- 闭合body标签（原footer_login.htm中的闭合逻辑） -->
+</html>
