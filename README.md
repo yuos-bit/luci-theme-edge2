@@ -66,12 +66,12 @@ Edge2 是修改至argon的**一款干净整洁的 OpenWrt LuCI 主题**，
 - 带有扩展功能的设置插件 [luci-app-argon-config][config-link]
 
 ### 在官方和 ImmortalWrt 上安装
-
+[ipk下载](https://github.com/yuos-bit/compile-package/actions/runs/18631952687)
 ```bash
 opkg install luci-compat
 opkg install luci-lib-ipkg
-wget --no-check-certificate https://github.com/jerrykuku/luci-theme-argon/releases/download/v2.3.2/luci-theme-argon_2.3.2-r20250207_all.ipk
-opkg install luci-theme-argon*.ipk
+wget --no-check-certificate https://github.com/jerrykuku/luci-theme-argon/releases/download/v2.3.2/luci-theme-edge2_2.3.2_all.ipk
+opkg install luci-theme-edge2_2.3.2_all.ipk
 ```
 
 ## 注意
