@@ -29,7 +29,7 @@
 	local json		= require "luci.jsonc"
 	local sys		= require "luci.sys"
 	local uci		= require 'luci.model.uci'.cursor()
-	local ver		= require "luci.version"  -- 引入版本信息（原footer_login.htm中的依赖）
+	local ver		= require "luci.version"  -- 引入版本信息
 
 	-- Fetch Local Background Media
 	local function glob(...)
@@ -147,17 +147,17 @@
 		.card-login {
 			@apply bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-8 w-full max-w-md animate-fade-in;
 		}
-		.footer-main {
-			@apply mt-8 text-center text-sm text-gray-500;
+		.footer-main {  /* 卡片外页脚样式 */
+			@apply mt-8 text-center text-sm text-gray-200 animate-fade-in;
 		}
 		.footer-links {
-			@apply mt-4 text-xs text-gray-400;
+			@apply mt-2 text-xs text-gray-300/80;
 		}
 	}
 </style>
-<!-- Login Page Start -->
+<!-- Login Page Start: 背景容器 -->
 <div class="min-h-screen flex flex-col justify-center items-center p-4 bg-cover bg-center" style="background-image: url('<%=bgUrl%>');">
-	<!-- Login Container Start -->
+	<!-- Login Container Start: 登录卡片 -->
 	<div class="w-full max-w-md animate-fade-in">
 		<div class="card-login animate-slide-up">
 			<!-- Logo Start -->
@@ -207,20 +207,20 @@
 				</div>
 			</form>
 			<!-- Login Form End -->
-			<!-- 合并原footer_login.htm的页脚信息 -->
-			<div class="footer-main">
-				<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
-				<div class="mt-1">版本 <%=boardinfo.release or "?"%></div>
-				<!-- 原footer_login.htm中的链接信息 -->
-				<div class="footer-links">
-					<a href="https://yuos.top" target="_blank">小渔学长</a> /
-					<a class="luci-link" href="https://github.com/openwrt/luci" target="_blank">Powered by <%= ver.luciname %></a> /
-					<a href="https://github.com/yuos-bit/luci-theme-edge/tree/debug" target="_blank">EdgeTheme</a>
-				</div>
-			</div>
 		</div>
 	</div>
 	<!-- Login Container End -->
+
+	<!-- 合并footer_login.htm内容：放在卡片外，背景容器内 -->
+	<div class="footer-main">
+		<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
+		<div class="mt-1">版本 <%=boardinfo.release or "?"%></div>
+		<div class="footer-links">
+			<a href="https://yuos.top" target="_blank" class="hover:text-white transition-colors">小渔学长</a> /
+			<a class="luci-link" href="https://github.com/openwrt/luci" target="_blank" class="hover:text-white transition-colors">Powered by <%= ver.luciname %></a> /
+			<a href="https://github.com/yuos-bit/luci-theme-edge/tree/debug" target="_blank" class="hover:text-white transition-colors">EdgeTheme</a>
+		</div>
+	</div>
 </div>
 <!-- Login Page End -->
 <script type="text/javascript">//<![CDATA[
@@ -289,5 +289,5 @@
 		}
 	})
 //]]></script>
-</body>  <!-- 闭合body标签（原footer_login.htm中的闭合逻辑） -->
+</body>
 </html>
