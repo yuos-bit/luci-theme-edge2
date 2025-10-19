@@ -52,6 +52,7 @@ Edge2 是修改至argon的**一款干净整洁的 OpenWrt LuCI 主题**，
 [屏幕截图](#屏幕截图) •
 [贡献者](#贡献者) •
 [鸣谢](#鸣谢)
+
 ![image.png](https://free.picui.cn/free/2025/10/19/68f4fb5969720.png)
 <img src="https://github.com/yuos-bit/other/releases/download/Openwrt/H3C-NX30PRO---.---LuCI.00_00_00-00_00_30.gif">
 
