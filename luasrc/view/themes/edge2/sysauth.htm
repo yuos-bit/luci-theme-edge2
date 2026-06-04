@@ -29,7 +29,7 @@
     local json      = require "luci.jsonc"
     local sys       = require "luci.sys"
     local uci       = require 'luci.model.uci'.cursor()
-    local ver       = require "luci.version"  -- 引入版本信息
+    local ver       = require "luci.version"
 
     -- Fetch Local Background Media
     local function glob(...)
@@ -97,62 +97,19 @@
     local boardinfo         = util.ubus("system", "board")
     local themeDir          = media .. "/background/"
     local bgUrl, backgroundType, mimeType = selectBackground(themeDir)
+
+    -- 绕过系统库，直接精准抓取 /etc/openwrt_release 内 DISTRIB_DESCRIPTION 单引号中的自定义版本内容
+    local real_version = sys.exec("cat /etc/openwrt_release | grep DISTRIB_DESCRIPTION | cut -d\"'\" -f2")
+    if not real_version or real_version == "" then
+        real_version = ver.distdescription or "OpenWrt"
+    else
+        real_version = real_version:gsub("%s+$", "") -- 去除系统命令尾部的换行符与空格
+    end
 %>
-<script src="<%=media%>/js/tailwind.min.js"></script>
+
 <link href="<%=media%>/css/font-awesome.min.css" rel="stylesheet">
-<script>
-    tailwind.config = {
-        theme: {
-            extend: {
-                colors: {
-                    primary: '#ff6700',
-                    miBlue: '#0066cc',
-                    miDarkBlue: '#0055aa',
-                    miLightBlue: '#409eff',
-                },
-                fontFamily: {
-                    sans: ['Inter', 'system-ui', 'sans-serif'],
-                },
-                animation: {
-                    'fade-in': 'fadeIn 0.5s ease-in-out',
-                    'slide-up': 'slideUp 0.5s ease-out',
-                },
-                keyframes: {
-                    fadeIn: {
-                        '0%': { opacity: '0' },
-                        '100%': { opacity: '1' },
-                    },
-                    slideUp: {
-                        '0%': { transform: 'translateY(20px)', opacity: '0' },
-                        '100%': { transform: 'translateY(0)', opacity: '1' },
-                    },
-                },
-            }
-        }
-    }
-</script>
-<style type="text/tailwindcss">
-    @layer utilities {
-        .bg-gradient-mi {
-            background: linear-gradient(135deg, #0066cc 0%, #0055aa 100%);
-        }
-        .input-focus {
-            @apply border-primary ring-2 ring-primary/20;
-        }
-        .btn-mi {
-            @apply bg-primary hover:bg-primary/90 text-white font-medium py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg;
-        }
-        .card-login {
-            @apply bg-white/95 backdrop-blur-sm rounded-xl shadow-xl p-8 w-full max-w-md animate-fade-in;
-        }
-        .footer-main {  /* 卡片外页脚样式 */
-            @apply mt-8 text-center text-sm text-gray-200 animate-fade-in;
-        }
-        .footer-links {
-            @apply mt-2 text-xs text-gray-300/80;
-        }
-    }
-</style>
+<link href="<%=media%>/css/tailwind-login.css" rel="stylesheet">
+
 <div class="min-h-screen flex flex-col justify-center items-center p-4 bg-cover bg-center" style="background-image: url('<%=bgUrl%>');">
     <div class="w-full max-w-md animate-fade-in">
         <div class="card-login animate-slide-up">
@@ -199,11 +156,11 @@
                     </div>
                 </div>
             </form>
-            </div>
+        </div>
     </div>
     <div class="footer-main">
         <div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
-        <div class="mt-1">版本 <%=pcdata(ver.distdescription or "OpenWrt")%></div>
+        <div class="mt-1">版本 <%=pcdata(real_version)%></div>
         <div class="footer-links">
             <a href="https://yuos.top" target="_blank" class="hover:text-white transition-colors">小渔学长</a> /
             <a class="luci-link" href="https://github.com/openwrt/luci" target="_blank" class="hover:text-white transition-colors">Powered by <%= ver.luciname %></a> /
@@ -211,8 +168,9 @@
         </div>
     </div>
 </div>
+
 <script type="text/javascript">//<![CDATA[
-    // Toggle password visibility
+    // 切换密码可见性
     const togglePasswordBtn = document.getElementById('toggle-password');
     const passwordInput = document.getElementById('cbi-input-password');
     
@@ -221,7 +179,7 @@
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
             
-            // Toggle icon
+            // 切换图标
             const icon = this.querySelector('i');
             if (type === 'password') {
                 icon.classList.remove('fa-eye');
@@ -233,13 +191,13 @@
         });
     }
 
-    // Focus on password field by default
+    // 默认聚焦到密码输入框
     var input = document.getElementsByName('luci_password')[0];
     if (input)
         input.focus();
 
-    // Add input animations
-    const inputs = document.querySelectorAll('input');
+    // 输入框聚焦动画关联类（原生 JS 模拟缩放动画）
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
     inputs.forEach(input => {
         input.addEventListener('focus', function() {
             this.parentElement.classList.add('scale-[1.02]');
@@ -251,7 +209,7 @@
         });
     });
 
-    // Form validation
+    // 表单提交简单验证
     const form = document.querySelector('.form-login');
     if (form) {
         form.addEventListener('submit', function(e) {
@@ -265,17 +223,19 @@
         });
     }
 
-    // 原footer_login.htm中的脚本逻辑
+    // 移动端软键盘弹出时的布局适配
     var luciLocation = <%= luci.http.write_json(luci.dispatcher.context.path) %>;
-    var winHeight = $(window).height();
-    $(window).resize(function () {
-        var winWidth = $(window).width()
-        if(winWidth < 600){
-            var newHeight = $(this).height();
-            var keyboradHeight = newHeight - winHeight;
-            $(".ftc").css("bottom", keyboradHeight + 30);
+    var winHeight = window.innerHeight;
+    
+    window.addEventListener('resize', function () {
+        var winWidth = window.innerWidth;
+        if (winWidth < 600) {
+            var newHeight = window.innerHeight;
+            var keyboardHeight = newHeight - winHeight;
+            var ftc = document.querySelector(".ftc");
+            if (ftc) {
+                ftc.style.bottom = (keyboardHeight + 30) + "px";
+            }
         }
-    })
+    });
 //]]></script>
-</body>
-</html>
