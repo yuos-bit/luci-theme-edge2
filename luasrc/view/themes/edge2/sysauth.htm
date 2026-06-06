@@ -60,9 +60,9 @@
 					bg.url = themeDir .. fs.basename(f)
 					table.insert(backgroundTable, bg)
 					backgroundCount = backgroundCount + 1
-                end
-            end
-        end
+				end
+			end
+		end
 		return backgroundTable, backgroundCount
 	end
 
@@ -98,27 +98,59 @@
 	local themeDir			= media .. "/background/"
 	local bgUrl, backgroundType, mimeType = selectBackground(themeDir)
 
-	-- 资源本地化：直接绕过底层，从你亲手编译的文件里抓取真实的编译版本号
+	-- 绕过系统硬编码，直接精准抓取 /etc/openwrt_release 内自定义版本内容
 	local real_version = sys.exec("cat /etc/openwrt_release | grep DISTRIB_DESCRIPTION | cut -d\"'\" -f2")
 	if not real_version or real_version == "" then
 		real_version = boardinfo.release or "?"
 	else
-		real_version = real_version:gsub("%s+$", "") -- 去除尾部无用换行符
+		real_version = real_version:gsub("%s+$", "") -- 去除尾部换行符
 	end
 %>
 
+<!-- 本地化资源引入 -->
 <link href="<%=media%>/css/font-awesome.min.css" rel="stylesheet">
 <link href="<%=media%>/css/tailwind-login.css" rel="stylesheet">
 
+<!-- 核心修复补丁：强制补全本地独立 CSS 缺失的 Tailwind 定位与位移基础样式 -->
+<style type="text/css">
+	.relative {
+		position: relative !important;
+	}
+	.absolute {
+		position: absolute !important;
+	}
+	.top-1/2 {
+		top: 50% !important;
+	}
+	.right-4 {
+		right: 1rem !important;
+	}
+	.right-10 {
+		right: 2.5rem !important;
+	}
+	/* 关键：修复你图中图标掉到左下角的核心样式 */
+	.transform {
+		transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) rotate(var(--tw-rotate, 0)) skewX(var(--tw-skew-x, 0)) skewY(var(--tw-skew-y, 0)) scaleX(var(--tw-scale-x, 1)) scaleY(var(--tw-scale-y, 1)) !important;
+	}
+	.-translate-y-1/2 {
+		--tw-translate-y: -50% !important;
+	}
+</style>
+
+<!-- Login Page Start: 背景容器 -->
 <div class="min-h-screen flex flex-col justify-center items-center p-4 bg-cover bg-center" style="background-image: url('<%=bgUrl%>');">
+	<!-- Login Container Start: 登录卡片 -->
 	<div class="w-full max-w-md animate-fade-in">
 		<div class="card-login animate-slide-up">
+			<!-- Logo Start -->
 			<div class="flex justify-center mb-8">
 				<div class="text-center">
 					<div class="text-5xl font-bold text-miBlue mb-2">XiaoYu</div>
-					<div class="text-gray-600 text-lg">大道至简，焕如新生</div>
+					<div class="text-gray-600 text-lg">你若盛开，清风徐来</div>
 				</div>
 			</div>
+			<!-- Logo End -->
+			<!-- Login Form Start -->
 			<form class="form-login" method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
 				<%- if fuser then %>
 				<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 animate-fade-in">
@@ -156,11 +188,15 @@
 					</div>
 				</div>
 			</form>
-			</div>
+			<!-- Login Form End -->
+		</div>
 	</div>
+	<!-- Login Container End -->
+
+	<!-- 页脚 -->
 	<div class="footer-main">
 		<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
-		<div class="mt-1">版本号： <%=pcdata(real_version)%></div>
+		<div class="mt-1">版本 <%=pcdata(real_version)%></div>
 		<div class="footer-links">
 			<a href="https://yuos.top" target="_blank" class="hover:text-white transition-colors">小渔学长</a> /
 			<a class="luci-link" href="https://github.com/openwrt/luci" target="_blank" class="hover:text-white transition-colors">Powered by <%= ver.luciname %></a> /
@@ -168,6 +204,7 @@
 		</div>
 	</div>
 </div>
+<!-- Login Page End -->
 <script type="text/javascript">//<![CDATA[
 	// Toggle password visibility
 	const togglePasswordBtn = document.getElementById('toggle-password');
@@ -222,7 +259,7 @@
 		});
 	}
 
-	// 移动端适配适配
+	// 移动端适配
 	var luciLocation = <%= luci.http.write_json(luci.dispatcher.context.path) %>;
 	var winHeight = window.innerHeight;
 	
