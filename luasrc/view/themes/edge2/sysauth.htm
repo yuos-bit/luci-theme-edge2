@@ -1,279 +1,269 @@
 <%#
-	Edge2 is a clean HTML5 theme for LuCI. It is based on luci-theme-bootstrap and MUI and Edge2 Template
+    Edge2 is a clean HTML5 theme for LuCI. It is based on luci-theme-bootstrap and MUI and Edge2 Template
 
-	luci-theme-edge2
-	Copyright 2020 Jerrykuku <jerrykuku@gmail.com>
+    luci-theme-edge2
+    Copyright 2020 Jerrykuku <jerrykuku@gmail.com>
 
-	Have a bug? Please create an issue here on GitHub!
-	https://github.com/jerrykuku/luci-theme-edge2/issues
+    Have a bug? Please create an issue here on GitHub!
+    https://github.com/jerrykuku/luci-theme-edge2/issues
 
-	luci-theme-bootstrap:
-	Copyright 2008 Steven Barth <steven@midlink.org>
-	Copyright 2008-2016 Jo-Philipp Wich <jow@openwrt.org>
-	Copyright 2012 David Menting <david@nut-bolt.nl>
+    luci-theme-bootstrap:
+    Copyright 2008 Steven Barth <steven@midlink.org>
+    Copyright 2008-2016 Jo-Philipp Wich <jow@openwrt.org>
+    Copyright 2012 David Menting <david@nut-bolt.nl>
 
-	MUI:
-	https://github.com/muicss/mui
+    MUI:
+    https://github.com/muicss/mui
 
-	Edge2 Theme
-	https://demos.creative-tim.com/edge2-dashboard/index.html
+    Edge2 Theme
+    https://demos.creative-tim.com/edge2-dashboard/index.html
 
-	Licensed to the public under the Apache License 2.0
+    Licensed to the public under the Apache License 2.0
 -%>
 
 <%+themes/edge2/out_header_login%>
 <%
-	local util		= require "luci.util"
-	local fs		= require "nixio.fs"
-	local nutil		= require "nixio.util"
-	local json		= require "luci.jsonc"
-	local sys		= require "luci.sys"
-	local uci		= require 'luci.model.uci'.cursor()
-	local ver		= require "luci.version"
+    local util      = require "luci.util"
+    local fs        = require "nixio.fs"
+    local nutil     = require "nixio.util"
+    local json      = require "luci.jsonc"
+    local sys       = require "luci.sys"
+    local uci       = require 'luci.model.uci'.cursor()
+    local ver       = require "luci.version"
 
-	-- Fetch Local Background Media
-	local function glob(...)
-		local iter, code, msg = fs.glob(...)
-		if iter then
-			return nutil.consume(iter)
-		else
-			return nil, code, msg
-		end
-	end
+    -- Fetch Local Background Media
+    local function glob(...)
+        local iter, code, msg = fs.glob(...)
+        if iter then
+            return nutil.consume(iter)
+        else
+            return nil, code, msg
+        end
+    end
 
-	local imageTypes = " jpg png gif webp "
-	local videoTypes = " mp4 webm "
-	local allTypes = imageTypes .. videoTypes
-	local function fetchMedia(path, themeDir)
-		local backgroundTable = {}
-		local backgroundCount = 0
-		for i, f in ipairs(glob(path)) do
-			attr = fs.stat(f)
-			if attr then
-				local ext = fs.basename(f):match(".+%.(%w+)$")
-				if ext ~= nil then
-					ext = ext:lower()
-				end
-				if ext ~= nil and string.match(allTypes, " "..ext.." ") ~= nil then
-					local bg = {}
-					bg.type = ext
-					bg.url = themeDir .. fs.basename(f)
-					table.insert(backgroundTable, bg)
-					backgroundCount = backgroundCount + 1
-				end
-			end
-		end
-		return backgroundTable, backgroundCount
-	end
+    local imageTypes = " jpg png gif webp "
+    local videoTypes = " mp4 webm "
+    local allTypes = imageTypes .. videoTypes
+    local function fetchMedia(path, themeDir)
+        local backgroundTable = {}
+        local backgroundCount = 0
+        for i, f in ipairs(glob(path)) do
+            attr = fs.stat(f)
+            if attr then
+                local ext = fs.basename(f):match(".+%.(%w+)$")
+                if ext ~= nil then
+                    ext = ext:lower()
+                end
+                if ext ~= nil and string.match(allTypes, " "..ext.." ") ~= nil then
+                    local bg = {}
+                    bg.type = ext
+                    bg.url = themeDir .. fs.basename(f)
+                    table.insert(backgroundTable, bg)
+                    backgroundCount = backgroundCount + 1
+                end
+            end
+        end
+        return backgroundTable, backgroundCount
+    end
 
-	local function selectBackground(themeDir)
-		local bgUrl			= media .. "/img/bg1.jpg"
-		local backgroundType	= "Image"
-		local mimeType			= ""
+    local function selectBackground(themeDir)
+        local bgUrl         = media .. "/img/bg1.jpg"
+        local backgroundType    = "Image"
+        local mimeType          = ""
 
-		if fs.access("/etc/config/edge2") then
-			local online_wallpaper = uci:get_first('edge2', 'global', 'online_wallpaper') or (uci:get_first('edge2', 'global', 'bing_background') == '1' and 'bing')
-			if (online_wallpaper and online_wallpaper ~= "none") then
-				local picurl = sys.exec("/usr/libexec/edge2/online_wallpaper")
-				if (picurl and picurl ~= '') then
-					return picurl, "Image", ""
-				end
-			end
-		end
+        if fs.access("/etc/config/edge2") then
+            local online_wallpaper = uci:get_first('edge2', 'global', 'online_wallpaper') or (uci:get_first('edge2', 'global', 'bing_background') == '1' and 'bing')
+            if (online_wallpaper and online_wallpaper ~= "none") then
+                local picurl = sys.exec("/usr/libexec/edge2/online_wallpaper")
+                if (picurl and picurl ~= '') then
+                    return picurl, "Image", ""
+                end
+            end
+        end
 
-		local backgroundTable, backgroundCount = fetchMedia("/www" .. themeDir .. "*", themeDir)
-		if ( backgroundCount > 0 ) then
-			local currentBg = backgroundTable[math.random(1, backgroundCount)]
-			bgUrl			= currentBg.url
-			if (string.match(videoTypes, " "..currentBg.type.." ") ~= nil) then
-				backgroundType	= "Video"
-				mimeType		= "video/" .. currentBg.type
-			end
-		end
+        local backgroundTable, backgroundCount = fetchMedia("/www" .. themeDir .. "*", themeDir)
+        if ( backgroundCount > 0 ) then
+            local currentBg = backgroundTable[math.random(1, backgroundCount)]
+            bgUrl           = currentBg.url
+            if (string.match(videoTypes, " "..currentBg.type.." ") ~= nil) then
+                backgroundType  = "Video"
+                mimeType        = "video/" .. currentBg.type
+            end
+        end
 
-		return bgUrl, backgroundType, mimeType
-	end
+        return bgUrl, backgroundType, mimeType
+    end
 
-	local boardinfo			= util.ubus("system", "board")
-	local themeDir			= media .. "/background/"
-	local bgUrl, backgroundType, mimeType = selectBackground(themeDir)
+    local boardinfo         = util.ubus("system", "board")
+    local themeDir          = media .. "/background/"
+    local bgUrl, backgroundType, mimeType = selectBackground(themeDir)
 
-	-- 绕过系统硬编码，直接精准抓取 /etc/openwrt_release 内自定义版本内容
-	local real_version = sys.exec("cat /etc/openwrt_release | grep DISTRIB_DESCRIPTION | cut -d\"'\" -f2")
-	if not real_version or real_version == "" then
-		real_version = boardinfo.release or "?"
-	else
-		real_version = real_version:gsub("%s+$", "") -- 去除尾部换行符
-	end
+    -- 绕过系统硬编码，直接精准抓取 /etc/openwrt_release 内自定义版本内容
+    local real_version = sys.exec("cat /etc/openwrt_release | grep DISTRIB_DESCRIPTION | cut -d\"'\" -f2")
+    if not real_version or real_version == "" then
+        real_version = boardinfo.release or "?"
+    else
+        real_version = real_version:gsub("%s+$", "") -- 去除尾部换行符
+    end
 %>
 
 <!-- 本地化资源引入 -->
 <link href="<%=media%>/css/font-awesome.min.css" rel="stylesheet">
 <link href="<%=media%>/css/tailwind-login.css" rel="stylesheet">
 
-<!-- 核心修复补丁：强制补全本地独立 CSS 缺失的 Tailwind 定位与位移基础样式 -->
-<style type="text/css">
-	.relative {
-		position: relative !important;
-	}
-	.absolute {
-		position: absolute !important;
-	}
-	.top-1/2 {
-		top: 50% !important;
-	}
-	.right-4 {
-		right: 1rem !important;
-	}
-	.right-10 {
-		right: 2.5rem !important;
-	}
-	/* 关键：修复你图中图标掉到左下角的核心样式 */
-	.transform {
-		transform: translate(var(--tw-translate-x, 0), var(--tw-translate-y, 0)) rotate(var(--tw-rotate, 0)) skewX(var(--tw-skew-x, 0)) skewY(var(--tw-skew-y, 0)) scaleX(var(--tw-scale-x, 1)) scaleY(var(--tw-scale-y, 1)) !important;
-	}
-	.-translate-y-1/2 {
-		--tw-translate-y: -50% !important;
-	}
-</style>
-
 <!-- Login Page Start: 背景容器 -->
 <div class="min-h-screen flex flex-col justify-center items-center p-4 bg-cover bg-center" style="background-image: url('<%=bgUrl%>');">
-	<!-- Login Container Start: 登录卡片 -->
-	<div class="w-full max-w-md animate-fade-in">
-		<div class="card-login animate-slide-up">
-			<!-- Logo Start -->
-			<div class="flex justify-center mb-8">
-				<div class="text-center">
-					<div class="text-5xl font-bold text-miBlue mb-2">XiaoYu</div>
-					<div class="text-gray-600 text-lg">你若盛开，清风徐来</div>
-				</div>
-			</div>
-			<!-- Logo End -->
-			<!-- Login Form Start -->
-			<form class="form-login" method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
-				<%- if fuser then %>
-				<div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 animate-fade-in">
-					<i class="fa fa-exclamation-circle mr-2"></i>
-					<%:Invalid username and/or password! Please try again.%>
-				</div>
-				<% end -%>
+    
+    <!-- Login Container Start: 登录卡片 -->
+    <div class="w-full max-w-md animate-fade-in">
+        <div class="card-login animate-slide-up">
+            
+            <!-- Logo Start -->
+            <div class="flex justify-center mb-8">
+                <div class="text-center">
+                    <div class="text-5xl font-bold text-miBlue mb-2">XiaoYu</div>
+                    <div class="text-gray-600 text-lg">你若盛开，清风徐来</div>
+                </div>
+            </div>
+            <!-- Logo End -->
+            
+            <!-- Login Form Start -->
+            <form class="form-login" method="post" action="<%=pcdata(luci.http.getenv("REQUEST_URI"))%>">
+                <%- if fuser then %>
+                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 animate-fade-in">
+                    <i class="fa fa-exclamation-circle mr-2"></i>
+                    <%:Invalid username and/or password! Please try again.%>
+                </div>
+                <% end -%>
 
-				<div class="space-y-4">
-					<div class="relative">
-						<input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:input-focus transition-all duration-300" 
-							id="cbi-input-user" type="text" name="luci_username" value="<%=duser%>" placeholder="请输入管理员账号" />
-						<i class="fa fa-user absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-					</div>
-					<div class="relative">
-						<input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:input-focus transition-all duration-300" 
-							id="cbi-input-password" type="password" name="luci_password" placeholder="请输入管理员密码" />
-						<i class="fa fa-lock absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-						<button type="button" id="toggle-password" class="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
-							<i class="fa fa-eye-slash"></i>
-						</button>
-					</div>
-					<div class="flex items-center justify-between">
-						<div class="flex items-center">
-							<input type="checkbox" id="remember" name="remember" class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded">
-							<label for="remember" class="ml-2 text-sm text-gray-600">记住密码</label>
-						</div>
-						<a href="#" class="text-sm text-primary hover:text-primary/80 transition-colors">忘记密码?</a>
-					</div>
-					<div>
-						<button type="submit" class="btn-mi w-full flex items-center justify-center">
-							<span>登录</span>
-							<i class="fa fa-arrow-right ml-2"></i>
-						</button>
-					</div>
-				</div>
-			</form>
-			<!-- Login Form End -->
-		</div>
-	</div>
-	<!-- Login Container End -->
+                <div class="space-y-4">
+                    <!-- 账号输入框容器 -->
+                    <div class="relative" style="position: relative !important;">
+                        <input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:input-focus transition-all duration-300" 
+                            id="cbi-input-user" type="text" name="luci_username" value="<%=duser%>" placeholder="请输入管理员账号" style="padding-right: 2.5rem !important;" />
+                        <i class="fa fa-user" style="position: absolute !important; right: 1rem !important; top: 50% !important; transform: translateY(-50%) !important; color: #9ca3af !important; pointer-events: none; z-index: 5 !important;"></i>
+                    </div>
+                    
+                    <!-- 密码输入框容器 -->
+                    <div class="relative" style="position: relative !important;">
+                        <input class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:input-focus transition-all duration-300" 
+                            id="cbi-input-password" type="password" name="luci_password" placeholder="请输入管理员密码" style="padding-right: 4rem !important;" />
+                        
+                        <!-- 锁头图标 -->
+                        <i class="fa fa-lock" style="position: absolute !important; right: 1rem !important; top: 50% !important; transform: translateY(-50%) !important; color: #9ca3af !important; pointer-events: none; z-index: 5 !important;"></i>
+                        
+                        <!-- 核心修复：移除原 button 标签，换成 div 并通过行内样式实现强制像素级对齐，完美复刻 image_f3981c.png -->
+                        <div id="toggle-password" class="cursor-pointer text-gray-400 hover:text-gray-600 transition-colors" 
+                             style="position: absolute !important; right: 2.5rem !important; top: 50% !important; transform: translateY(-50%) !important; display: flex !important; align-items: center !important; justify-content: center !important; width: 24px !important; height: 24px !important; background: transparent !important; border: none !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; z-index: 10 !important;">
+                            <i class="fa fa-eye-slash"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- 选项区 -->
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="remember" name="remember" class="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded cursor-pointer">
+                            <label for="remember" class="ml-2 text-sm text-gray-600 select-none cursor-pointer">记住密码</label>
+                        </div>
+                        <a href="#" class="text-sm text-primary hover:text-primary/80 transition-colors">忘记密码?</a>
+                    </div>
+                    
+                    <!-- 登录提交按钮 -->
+                    <div>
+                        <button type="submit" class="btn-mi w-full flex items-center justify-center cursor-pointer">
+                            <span>登录</span>
+                            <i class="fa fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <!-- Login Form End -->
+            
+        </div>
+    </div>
+    <!-- Login Container End -->
 
-	<!-- 页脚 -->
-	<div class="footer-main">
-		<div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
-		<div class="mt-1">版本 <%=pcdata(real_version)%></div>
-		<div class="footer-links">
-			<a href="https://yuos.top" target="_blank" class="hover:text-white transition-colors">小渔学长</a> /
-			<a class="luci-link" href="https://github.com/openwrt/luci" target="_blank" class="hover:text-white transition-colors">Powered by <%= ver.luciname %></a> /
-			<a href="https://github.com/yuos-bit/luci-theme-edge/tree/debug" target="_blank" class="hover:text-white transition-colors">EdgeTheme</a>
-		</div>
-	</div>
+    <!-- 页脚区 -->
+    <div class="footer-main">
+        <div>© 2019-<%= os.date("%Y") %> 小渔学长</div>
+        <div class="mt-1">版本号： <%=pcdata(real_version)%></div>
+        <div class="footer-links">
+            <a href="https://yuos.top" target="_blank" class="hover:text-white transition-colors">小渔学长</a> /
+            <a class="luci-link" href="https://github.com/openwrt/luci" target="_blank" class="hover:text-white transition-colors">Powered by <%= ver.luciname %></a> /
+            <a href="https://github.com/yuos-bit/luci-theme-edge/tree/debug" target="_blank" class="hover:text-white transition-colors">EdgeTheme</a>
+        </div>
+    </div>
 </div>
 <!-- Login Page End -->
+
 <script type="text/javascript">//<![CDATA[
-	// Toggle password visibility
-	const togglePasswordBtn = document.getElementById('toggle-password');
-	const passwordInput = document.getElementById('cbi-input-password');
-	
-	if (togglePasswordBtn && passwordInput) {
-		togglePasswordBtn.addEventListener('click', function() {
-			const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-			passwordInput.setAttribute('type', type);
-			
-			// Toggle icon
-			const icon = this.querySelector('i');
-			if (type === 'password') {
-				icon.classList.remove('fa-eye');
-				icon.classList.add('fa-eye-slash');
-			} else {
-				icon.classList.remove('fa-eye-slash');
-				icon.classList.add('fa-eye');
-			}
-		});
-	}
+    // 明密文切换逻辑
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('cbi-input-password');
+    
+    if (togglePasswordBtn && passwordInput) {
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            
+            const icon = this.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    }
 
-	// Focus on password field by default
-	var input = document.getElementsByName('luci_password')[0];
-	if (input)
-		input.focus();
+    // 默认聚焦密码框
+    var input = document.getElementsByName('luci_password')[0];
+    if (input)
+        input.focus();
 
-	// Add input animations
-	const inputs = document.querySelectorAll('input');
-	inputs.forEach(input => {
-		input.addEventListener('focus', function() {
-			this.parentElement.classList.add('scale-[1.02]');
-			this.parentElement.style.transition = 'transform 0.3s ease';
-		});
-		
-		input.addEventListener('blur', function() {
-			this.parentElement.classList.remove('scale-[1.02]');
-		});
-	});
+    // 输入框聚焦放大微动动画
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.classList.add('scale-[1.02]');
+            this.parentElement.style.transition = 'transform 0.3s ease';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.classList.remove('scale-[1.02]');
+        });
+    });
 
-	// Form validation
-	const form = document.querySelector('.form-login');
-	if (form) {
-		form.addEventListener('submit', function(e) {
-			const username = document.getElementById('cbi-input-user').value;
-			const password = document.getElementById('cbi-input-password').value;
-			
-			if (!username || !password) {
-				e.preventDefault();
-				alert('请输入用户名和密码');
-			}
-		});
-	}
+    // 表单基础验证
+    const form = document.querySelector('.form-login');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const username = document.getElementById('cbi-input-user').value;
+            const password = document.getElementById('cbi-input-password').value;
+            
+            if (!username || !password) {
+                e.preventDefault();
+                alert('请输入用户名和密码');
+            }
+        });
+    }
 
-	// 移动端适配
-	var luciLocation = <%= luci.http.write_json(luci.dispatcher.context.path) %>;
-	var winHeight = window.innerHeight;
-	
-	window.addEventListener('resize', function () {
-		var winWidth = window.innerWidth;
-		if (winWidth < 600) {
-			var newHeight = window.innerHeight;
-			var keyboardHeight = newHeight - winHeight;
-			var ftc = document.querySelector(".ftc");
-			if (ftc) {
-				ftc.style.bottom = (keyboardHeight + 30) + "px";
-			}
-		}
-	});
+    // 移动端软键盘适配
+    var luciLocation = <%= luci.http.write_json(luci.dispatcher.context.path) %>;
+    var winHeight = window.innerHeight;
+    
+    window.addEventListener('resize', function () {
+        var winWidth = window.innerWidth;
+        if (winWidth < 600) {
+            var newHeight = window.innerHeight;
+            var keyboardHeight = newHeight - winHeight;
+            var ftc = document.querySelector(".ftc");
+            if (ftc) {
+                ftc.style.bottom = (keyboardHeight + 30) + "px";
+            }
+        }
+    });
 //]]></script>
 </body>
 </html>
